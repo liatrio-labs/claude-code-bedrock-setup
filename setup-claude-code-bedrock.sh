@@ -47,7 +47,7 @@
 #     --model "arn:aws:bedrock:us-east-1:123456789:inference-profile/us.anthropic.claude-opus-4-5-20251101-v1:0"
 #
 #   # Using environment variables
-#   AWS_REGION=eu-west-1 BEDROCK_MODEL_ID="anthropic.claude-sonnet-4-5-20250929-v1:0" \
+#   AWS_REGION=eu-west-1 BEDROCK_MODEL_ID="us.anthropic.claude-sonnet-4-5-20250929-v1:0" \
 #     ./setup-claude-code-bedrock.sh
 #
 # Notes:
@@ -85,8 +85,8 @@ fi
 # Defaults
 ########################
 DEFAULT_AWS_REGION="${AWS_REGION:-us-east-1}"
-DEFAULT_BEDROCK_MODEL_ID="${BEDROCK_MODEL_ID:-anthropic.claude-opus-4-5-20251101-v1:0}"
-DEFAULT_BEDROCK_SMALL_MODEL_ID="${BEDROCK_SMALL_MODEL_ID:-anthropic.claude-haiku-4-5-20251001-v1:0}"
+DEFAULT_BEDROCK_MODEL_ID="${BEDROCK_MODEL_ID:-us.anthropic.claude-opus-4-5-20251101-v1:0}"
+DEFAULT_BEDROCK_SMALL_MODEL_ID="${BEDROCK_SMALL_MODEL_ID:-us.anthropic.claude-haiku-4-5-20251001-v1:0}"
 DEFAULT_MAX_OUTPUT_TOKENS="${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-16000}"
 DEFAULT_MAX_THINKING_TOKENS="${MAX_THINKING_TOKENS:-10000}"
 AUTO_SOURCE_RC="${AUTO_SOURCE_RC:-0}"

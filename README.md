@@ -95,8 +95,8 @@ All options can be set via environment variables:
 
 ```bash
 AWS_REGION=eu-west-1 \
-BEDROCK_MODEL_ID="anthropic.claude-sonnet-4-5-20250929-v1:0" \
-BEDROCK_SMALL_MODEL_ID="anthropic.claude-haiku-4-5-20251001-v1:0" \
+BEDROCK_MODEL_ID="us.anthropic.claude-sonnet-4-5-20250929-v1:0" \
+BEDROCK_SMALL_MODEL_ID="us.anthropic.claude-haiku-4-5-20251001-v1:0" \
 CLAUDE_CODE_MAX_OUTPUT_TOKENS=8192 \
 ./setup-claude-code-bedrock.sh
 ```
@@ -175,14 +175,16 @@ echo $ANTHROPIC_MODEL
 
 | Model | Model ID |
 |-------|----------|
-| **Claude Opus 4.5** (default) | `anthropic.claude-opus-4-5-20251101-v1:0` |
-| **Claude Sonnet 4.5** | `anthropic.claude-sonnet-4-5-20250929-v1:0` |
-| **Claude Haiku 4.5** (fast) | `anthropic.claude-haiku-4-5-20251001-v1:0` |
+| **Claude Opus 4.5** (default) | `us.anthropic.claude-opus-4-5-20251101-v1:0` |
+| **Claude Sonnet 4.5** | `us.anthropic.claude-sonnet-4-5-20250929-v1:0` |
+| **Claude Haiku 4.5** (fast) | `us.anthropic.claude-haiku-4-5-20251001-v1:0` |
 
-### Model ARNs (us-east-1)
+### Inference Profile IDs (US region)
+
+These models require inference profiles (not foundation model IDs):
 
 ```
-arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-opus-4-5-20251101-v1:0
-arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0
-arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0
+us.anthropic.claude-opus-4-5-20251101-v1:0
+us.anthropic.claude-sonnet-4-5-20250929-v1:0
+us.anthropic.claude-haiku-4-5-20251001-v1:0
 ```
