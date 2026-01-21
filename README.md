@@ -55,6 +55,10 @@ aws sts get-caller-identity
 
 # 6. Start Claude Code
 claude
+
+# 7. Verify
+# After starting Claude Code, run /config, then left-arrow over to Status.
+# You should see "API provider: AWS Bedrock"
 ```
 
 ## Installation Options
