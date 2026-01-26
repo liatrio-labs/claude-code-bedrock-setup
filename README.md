@@ -42,7 +42,7 @@ aws login
 
 # 2. Clone or download the script
 git clone <this-repo>
-cd csp-model-use
+cd claude-code-bedrock-setup
 
 # 3. Run setup with defaults
 ./setup-claude-code-bedrock.sh
