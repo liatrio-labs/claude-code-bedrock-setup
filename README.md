@@ -1,6 +1,6 @@
 # Claude Code + AWS Bedrock Setup
 
-A simple setup script to configure [Claude Code](https://code.claude.com/docs/en/amazon-bedrock) to use AWS Bedrock as the model provider.
+A simple setup script to configure [Claude Code](https://code.claude.com/docs/en/overview) to use AWS Bedrock as the model provider.
 
 ## Prerequisites
 
