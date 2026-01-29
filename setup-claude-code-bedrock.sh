@@ -33,8 +33,8 @@
 #   AWS_PROFILE                   - AWS profile name
 #   BEDROCK_MODEL_ID              - Primary model ID or Inference Profile ARN
 #   BEDROCK_SMALL_MODEL_ID        - Small/fast model ID
-#   CLAUDE_CODE_MAX_OUTPUT_TOKENS - Max output tokens (default: 4096)
-#   MAX_THINKING_TOKENS           - Max thinking tokens (default: 1024)
+#   CLAUDE_CODE_MAX_OUTPUT_TOKENS - Max output tokens (default: 64000)
+#   MAX_THINKING_TOKENS           - Max thinking tokens (default: 8192)
 #   AUTO_SOURCE_RC                - Set to 1 to auto-source in shell rc
 #
 # Examples:
@@ -97,11 +97,8 @@ DEFAULT_AWS_REGION="${AWS_REGION:-us-east-1}"
 DEFAULT_AWS_PROFILE="${AWS_PROFILE:-}"
 DEFAULT_BEDROCK_MODEL_ID="${BEDROCK_MODEL_ID:-us.anthropic.claude-opus-4-5-20251101-v1:0}"
 DEFAULT_BEDROCK_SMALL_MODEL_ID="${BEDROCK_SMALL_MODEL_ID:-us.anthropic.claude-haiku-4-5-20251001-v1:0}"
-# Recommended token settings from Claude Code docs for Bedrock
-# 4096 output tokens is the minimum to avoid Bedrock's burndown throttling penalty
-# 1024 thinking tokens provides focused reasoning without cutting off tool responses
-DEFAULT_MAX_OUTPUT_TOKENS="${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-4096}"
-DEFAULT_MAX_THINKING_TOKENS="${MAX_THINKING_TOKENS:-1024}"
+DEFAULT_MAX_OUTPUT_TOKENS="${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-64000}"
+DEFAULT_MAX_THINKING_TOKENS="${MAX_THINKING_TOKENS:-8192}"
 AUTO_SOURCE_RC="${AUTO_SOURCE_RC:-0}"
 DRY_RUN=0
 UNINSTALL=0

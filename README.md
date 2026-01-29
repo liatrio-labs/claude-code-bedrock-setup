@@ -169,8 +169,8 @@ Options:
     "AWS_PROFILE": "your-profile",
     "ANTHROPIC_MODEL": "us.anthropic.claude-opus-4-5-20251101-v1:0",
     "ANTHROPIC_SMALL_FAST_MODEL": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "4096",
-    "MAX_THINKING_TOKENS": "1024"
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "64000",
+    "MAX_THINKING_TOKENS": "8192"
   }
 }
 ```
