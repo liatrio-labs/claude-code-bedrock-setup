@@ -21,7 +21,7 @@
 # Options:
 #   -h, --help              Show this help message
 #   -r, --region REGION     AWS region (default: us-east-1)
-#   -p, --profile PROFILE   AWS profile name (HIGHLY RECOMMENDED for SSO users)
+#   -p, --profile PROFILE   AWS profile name
 #   -m, --model MODEL       Primary model ID or Inference Profile ARN
 #   -s, --small-model MODEL Small/fast model ID
 #   --auto-source           Automatically add source line to shell rc
@@ -30,7 +30,7 @@
 #
 # Environment Variables (alternative to options):
 #   AWS_REGION                    - AWS region
-#   AWS_PROFILE                   - AWS profile name (HIGHLY RECOMMENDED)
+#   AWS_PROFILE                   - AWS profile name
 #   BEDROCK_MODEL_ID              - Primary model ID or Inference Profile ARN
 #   BEDROCK_SMALL_MODEL_ID        - Small/fast model ID
 #   CLAUDE_CODE_MAX_OUTPUT_TOKENS - Max output tokens (default: 4096)
@@ -38,14 +38,14 @@
 #   AUTO_SOURCE_RC                - Set to 1 to auto-source in shell rc
 #
 # Examples:
-#   # RECOMMENDED: Setup with a named AWS profile (prevents credential expiry issues)
+#   # Basic setup
+#   ./setup-claude-code-bedrock.sh --auto-source
+#
+#   # Setup with a named AWS profile
 #   ./setup-claude-code-bedrock.sh --profile my-aws-profile --auto-source
 #
-#   # Basic setup with defaults (not recommended for SSO users)
-#   ./setup-claude-code-bedrock.sh
-#
-#   # Custom region with named profile
-#   ./setup-claude-code-bedrock.sh --region us-west-2 --profile my-profile --auto-source
+#   # Custom region
+#   ./setup-claude-code-bedrock.sh --region us-west-2 --auto-source
 #
 #   # Using Inference Profile ARN (recommended for production)
 #   ./setup-claude-code-bedrock.sh --profile my-profile \
@@ -59,8 +59,7 @@
 # Notes:
 #   - Auto credential refresh is always enabled. When AWS credentials expire,
 #     Claude Code will automatically re-authenticate to preserve your session.
-#   - RECOMMENDED: Use a named AWS profile (--profile) for better control over
-#     which AWS account/role is used, especially with multiple accounts.
+#   - Use a named AWS profile (--profile) if you work with multiple AWS accounts.
 #   - Claude Code uses the AWS SDK credential chain. Verify with:
 #       aws sts get-caller-identity
 #   - If you hit throughput errors, use an Inference Profile ARN instead of
@@ -578,9 +577,8 @@ main() {
         echo "  When your AWS session expires, Claude Code will automatically"
         echo "  run: aws login"
         echo ""
-        echo "${YELLOW}TIP:${RESET} For better control over which AWS account/role you use,"
-        echo "     consider using a named profile:"
-        echo "     ${BOLD}$0 --profile <your-aws-profile-name>${RESET}"
+        echo "${YELLOW}TIP:${RESET} If you work with multiple AWS accounts, use --profile to"
+        echo "     specify which profile to use for credential refresh."
         echo ""
     fi
 

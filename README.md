@@ -11,19 +11,7 @@ A simple setup script to configure [Claude Code](https://code.claude.com/docs/en
 
 ## AWS Authentication
 
-This script configures **automatic credential refresh** for both authentication methods. When your AWS session expires, Claude Code will automatically re-authenticate to preserve your conversation context.
-
-### Option 1: Named Profile (Recommended)
-
-```bash
-# Login with your named profile
-aws sso login --profile your-profile-name
-
-# Verify your credentials
-aws sts get-caller-identity --profile your-profile-name
-```
-
-### Option 2: Default Credentials
+This script configures **automatic credential refresh**. When your AWS session expires, Claude Code will automatically re-authenticate to preserve your conversation context.
 
 ```bash
 # Login to AWS
@@ -33,6 +21,18 @@ aws login
 aws sts get-caller-identity
 ```
 
+Or if you prefer using SSO with a named profile:
+
+```bash
+# Login with a named profile
+aws sso login --profile your-profile-name
+
+# Verify your credentials
+aws sts get-caller-identity --profile your-profile-name
+```
+
+> **Note:** If you haven't configured AWS SSO yet, see the [AWS SSO configuration guide](https://docs.aws.amazon.com/cli/latest/userguide/sso-configure-profile-token.html). Using a named profile is helpful when working with multiple AWS accounts.
+
 ## Quick Start
 
 ```bash
@@ -40,11 +40,11 @@ aws sts get-caller-identity
 git clone <this-repo>
 cd claude-code-bedrock-setup
 
-# 2. Login to AWS with your named profile
-aws sso login --profile your-profile-name
+# 2. Login to AWS
+aws login
 
-# 3. Run setup with your profile (enables auto credential refresh)
-./setup-claude-code-bedrock.sh --profile your-profile-name --auto-source
+# 3. Run setup
+./setup-claude-code-bedrock.sh --auto-source
 
 # 4. Activate in current shell (or restart your terminal)
 source ~/.claude/claude-code-bedrock.env
@@ -60,42 +60,45 @@ claude
 # You should see "API provider: AWS Bedrock"
 ```
 
-### Why Use a Named Profile?
+Or with a named profile:
 
-Both methods support automatic credential refresh, but **named profiles are recommended** because:
+```bash
+# 1. Clone or download the script
+git clone <this-repo>
+cd claude-code-bedrock-setup
 
-- **Explicit account control** - You know exactly which AWS account and role you're using
-- **Multiple accounts** - Essential if you work with multiple AWS accounts
-- **Team consistency** - Easier to document and share setup instructions
-- **Predictable behavior** - `aws sso login --profile <name>` is more deterministic than `aws login`
+# 2. Login to AWS with your profile
+aws sso login --profile your-profile-name
 
-Without a profile, the script uses `aws login` for auto-refresh, which works but may be less predictable if you have multiple AWS configurations.
+# 3. Run setup with your profile
+./setup-claude-code-bedrock.sh --profile your-profile-name --auto-source
+
+# 4. Activate in current shell (or restart your terminal)
+source ~/.claude/claude-code-bedrock.env
+
+# 5. Start Claude Code
+claude
+```
 
 ## Installation Options
 
-### Recommended: Named Profile with Auto-Source
-
-```bash
-./setup-claude-code-bedrock.sh --profile your-profile-name --auto-source
-source ~/.claude/claude-code-bedrock.env
-```
-
-This:
-- Configures automatic credential refresh via `awsAuthRefresh` using `aws sso login --profile <name>`
-- Sets `AWS_PROFILE` in your environment
-- Appends a source line to your shell rc file (`~/.zshrc` or `~/.bashrc`)
-
-### Basic Setup (Default Credentials)
+### Basic Setup
 
 ```bash
 ./setup-claude-code-bedrock.sh --auto-source
 source ~/.claude/claude-code-bedrock.env
 ```
 
-This:
-- Configures automatic credential refresh via `awsAuthRefresh` using `aws login`
-- Uses your default AWS credentials
-- Appends a source line to your shell rc file
+This configures automatic credential refresh and appends a source line to your shell rc file (`~/.zshrc` or `~/.bashrc`).
+
+### With Named Profile
+
+```bash
+./setup-claude-code-bedrock.sh --profile your-profile-name --auto-source
+source ~/.claude/claude-code-bedrock.env
+```
+
+This also sets `AWS_PROFILE` in your environment so credentials refresh using your specific profile.
 
 ### Custom Region
 
@@ -132,7 +135,7 @@ Usage: ./setup-claude-code-bedrock.sh [OPTIONS]
 Options:
   -h, --help              Show help message
   -r, --region REGION     AWS region (default: us-east-1)
-  -p, --profile PROFILE   AWS profile name (highly recommended for SSO users)
+  -p, --profile PROFILE   AWS profile name
   -m, --model MODEL       Primary model ID or Inference Profile ARN
   -s, --small-model MODEL Small/fast model ID
   --auto-source           Add source line to shell rc
@@ -149,8 +152,6 @@ Options:
 
 ### Example settings.json
 
-**With named profile (recommended):**
-
 ```json
 {
   "awsAuthRefresh": "aws sso login --profile your-profile",
@@ -166,23 +167,7 @@ Options:
 }
 ```
 
-**Without profile (default credentials):**
-
-```json
-{
-  "awsAuthRefresh": "aws login",
-  "env": {
-    "CLAUDE_CODE_USE_BEDROCK": "1",
-    "AWS_REGION": "us-east-1",
-    "ANTHROPIC_MODEL": "us.anthropic.claude-opus-4-5-20251101-v1:0",
-    "ANTHROPIC_SMALL_FAST_MODEL": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
-    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "4096",
-    "MAX_THINKING_TOKENS": "1024"
-  }
-}
-```
-
-The `awsAuthRefresh` setting tells Claude Code to automatically run the specified command when AWS credentials expire, keeping your session alive.
+The `awsAuthRefresh` setting tells Claude Code to automatically run the specified command when AWS credentials expire, keeping your session alive. If no profile is configured, it uses `aws login` instead.
 
 ## Uninstall
 
@@ -206,8 +191,6 @@ If it's missing, re-run the setup script:
 
 ```bash
 ./setup-claude-code-bedrock.sh --auto-source
-# Or with a named profile (recommended):
-./setup-claude-code-bedrock.sh --profile your-profile-name --auto-source
 ```
 
 ### "Could not authenticate with AWS"
@@ -215,21 +198,13 @@ If it's missing, re-run the setup script:
 Verify your credentials:
 
 ```bash
-# With named profile
-aws sts get-caller-identity --profile your-profile
-
-# With default credentials
 aws sts get-caller-identity
 ```
 
 To re-authenticate:
 
 ```bash
-# With named profile
 aws sso login --profile your-profile
-
-# With default credentials
-aws login
 ```
 
 ### "Access denied" for Bedrock
@@ -276,5 +251,6 @@ us.anthropic.claude-haiku-4-5-20251001-v1:0
 ## Resources
 
 - [Claude Code on Amazon Bedrock](https://code.claude.com/docs/en/amazon-bedrock) - Official documentation
+- [AWS SSO Configuration Guide](https://docs.aws.amazon.com/cli/latest/userguide/sso-configure-profile-token.html) - Set up AWS SSO profiles
 - [Bedrock Inference Profiles](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html) - AWS documentation
 - [Bedrock Model Access](https://console.aws.amazon.com/bedrock/home#/modelaccess) - Enable models in your account
