@@ -82,14 +82,22 @@ claude
 
 ## Installation Options
 
-### Basic Setup
+### Basic Setup (Interactive Activation)
 
 ```bash
-./setup-claude-code-bedrock.sh --auto-source
+./setup-claude-code-bedrock.sh
 source ~/.claude/claude-code-bedrock.env
 ```
 
-This configures automatic credential refresh and appends a source line to your shell rc file (`~/.zshrc` or `~/.bashrc`).
+This configures automatic credential refresh using the `aws login` command.
+
+### Auto-load in New Terminals
+
+```bash
+./setup-claude-code-bedrock.sh --auto-source
+```
+
+This configures automatic credential refresh using the `aws login` command and appends a source line to your shell rc file (`~/.zshrc` or `~/.bashrc`).
 
 ### With Named Profile
 
@@ -98,7 +106,7 @@ This configures automatic credential refresh and appends a source line to your s
 source ~/.claude/claude-code-bedrock.env
 ```
 
-This also sets `AWS_PROFILE` in your environment so credentials refresh using your specific profile.
+This configures automatic credential refresh using the `aws sso login --profile your-profile-name` command and appends a source line to your shell rc file (`~/.zshrc` or `~/.bashrc`). This also sets `AWS_PROFILE` in your environment so credentials refresh using your specific profile.
 
 ### Custom Region
 
