@@ -21,6 +21,7 @@
 # Options:
 #   -h, --help              Show this help message
 #   -r, --region REGION     AWS region (default: us-east-1)
+#   -p, --profile PROFILE   AWS profile name
 #   -m, --model MODEL       Primary model ID or Inference Profile ARN
 #   -s, --small-model MODEL Small/fast model ID
 #   --auto-source           Automatically add source line to shell rc
@@ -29,42 +30,50 @@
 #
 # Environment Variables (alternative to options):
 #   AWS_REGION                    - AWS region
+#   AWS_PROFILE                   - AWS profile name
 #   BEDROCK_MODEL_ID              - Primary model ID or Inference Profile ARN
 #   BEDROCK_SMALL_MODEL_ID        - Small/fast model ID
-#   CLAUDE_CODE_MAX_OUTPUT_TOKENS - Max output tokens (default: 16000)
-#   MAX_THINKING_TOKENS           - Max thinking tokens (default: 10000)
+#   CLAUDE_CODE_MAX_OUTPUT_TOKENS - Max output tokens (default: 64000)
+#   MAX_THINKING_TOKENS           - Max thinking tokens (default: 8192)
 #   AUTO_SOURCE_RC                - Set to 1 to auto-source in shell rc
 #
 # Examples:
-#   # Basic setup with defaults
-#   ./setup-claude-code-bedrock.sh
+#   # Basic setup
+#   ./setup-claude-code-bedrock.sh --auto-source
 #
-#   # Custom region and auto-source
+#   # Setup with a named AWS profile
+#   ./setup-claude-code-bedrock.sh --profile my-aws-profile --auto-source
+#
+#   # Custom region
 #   ./setup-claude-code-bedrock.sh --region us-west-2 --auto-source
 #
 #   # Using Inference Profile ARN (recommended for production)
-#   ./setup-claude-code-bedrock.sh \
+#   ./setup-claude-code-bedrock.sh --profile my-profile \
 #     --model "arn:aws:bedrock:us-east-1:123456789:inference-profile/us.anthropic.claude-opus-4-5-20251101-v1:0"
 #
 #   # Using environment variables
-#   AWS_REGION=eu-west-1 BEDROCK_MODEL_ID="us.anthropic.claude-sonnet-4-5-20250929-v1:0" \
+#   AWS_REGION=eu-west-1 AWS_PROFILE=my-profile \
+#     BEDROCK_MODEL_ID="us.anthropic.claude-sonnet-4-5-20250929-v1:0" \
 #     ./setup-claude-code-bedrock.sh
 #
 # Notes:
+#   - Auto credential refresh is always enabled. When AWS credentials expire,
+#     Claude Code will automatically re-authenticate to preserve your session.
+#   - Use a named AWS profile (--profile) if you work with multiple AWS accounts.
 #   - Claude Code uses the AWS SDK credential chain. Verify with:
 #       aws sts get-caller-identity
 #   - If you hit throughput errors, use an Inference Profile ARN instead of
 #     a foundation model ID
 #   - Run with --uninstall to cleanly remove configuration
 #
-# For more info: https://docs.anthropic.com/en/docs/build-with-claude/claude-code
+# For more info: https://code.claude.com/docs/en/amazon-bedrock
 #
 set -euo pipefail
 
 ########################
 # Script metadata
 ########################
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.1.0"
 SCRIPT_NAME="$(basename "$0")"
 
 ########################
@@ -85,10 +94,11 @@ fi
 # Defaults
 ########################
 DEFAULT_AWS_REGION="${AWS_REGION:-us-east-1}"
+DEFAULT_AWS_PROFILE="${AWS_PROFILE:-}"
 DEFAULT_BEDROCK_MODEL_ID="${BEDROCK_MODEL_ID:-us.anthropic.claude-opus-4-5-20251101-v1:0}"
 DEFAULT_BEDROCK_SMALL_MODEL_ID="${BEDROCK_SMALL_MODEL_ID:-us.anthropic.claude-haiku-4-5-20251001-v1:0}"
-DEFAULT_MAX_OUTPUT_TOKENS="${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-16000}"
-DEFAULT_MAX_THINKING_TOKENS="${MAX_THINKING_TOKENS:-10000}"
+DEFAULT_MAX_OUTPUT_TOKENS="${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-64000}"
+DEFAULT_MAX_THINKING_TOKENS="${MAX_THINKING_TOKENS:-8192}"
 AUTO_SOURCE_RC="${AUTO_SOURCE_RC:-0}"
 DRY_RUN=0
 UNINSTALL=0
@@ -100,6 +110,7 @@ CLAUDE_HOME="${HOME}/.claude"
 SETTINGS_FILE="${CLAUDE_HOME}/settings.json"
 SHELL_SNIPPET="${CLAUDE_HOME}/claude-code-bedrock.env"
 BACKUP_SUFFIX=".backup.$(date +%Y%m%d-%H%M%S)"
+SETTINGS_BACKUP_PATH=""  # Will be set if a backup is created
 
 ########################
 # Helper functions
@@ -141,11 +152,39 @@ show_help() {
 ########################
 write_json_settings() {
     local file="$1"
-    
-    if [[ "$DRY_RUN" == "1" ]]; then
-        info "[DRY RUN] Would write settings to: $file"
-        cat <<EOF
+    local settings_content
+    local auth_refresh_cmd
+
+    # Determine the auth refresh command based on whether a profile is configured
+    if [[ -n "$DEFAULT_AWS_PROFILE" ]]; then
+        auth_refresh_cmd="aws sso login --profile ${DEFAULT_AWS_PROFILE}"
+    else
+        auth_refresh_cmd="aws login"
+    fi
+
+    # Build settings JSON - always include awsAuthRefresh for automatic credential refresh
+    if [[ -n "$DEFAULT_AWS_PROFILE" ]]; then
+        # With profile: include AWS_PROFILE in env
+        settings_content=$(cat <<EOF
 {
+  "awsAuthRefresh": "${auth_refresh_cmd}",
+  "env": {
+    "CLAUDE_CODE_USE_BEDROCK": "1",
+    "AWS_REGION": "${DEFAULT_AWS_REGION}",
+    "AWS_PROFILE": "${DEFAULT_AWS_PROFILE}",
+    "ANTHROPIC_MODEL": "${DEFAULT_BEDROCK_MODEL_ID}",
+    "ANTHROPIC_SMALL_FAST_MODEL": "${DEFAULT_BEDROCK_SMALL_MODEL_ID}",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "${DEFAULT_MAX_OUTPUT_TOKENS}",
+    "MAX_THINKING_TOKENS": "${DEFAULT_MAX_THINKING_TOKENS}"
+  }
+}
+EOF
+)
+    else
+        # Without profile: use default credentials
+        settings_content=$(cat <<EOF
+{
+  "awsAuthRefresh": "${auth_refresh_cmd}",
   "env": {
     "CLAUDE_CODE_USE_BEDROCK": "1",
     "AWS_REGION": "${DEFAULT_AWS_REGION}",
@@ -156,6 +195,12 @@ write_json_settings() {
   }
 }
 EOF
+)
+    fi
+
+    if [[ "$DRY_RUN" == "1" ]]; then
+        info "[DRY RUN] Would write settings to: $file"
+        echo "$settings_content"
         return
     fi
 
@@ -163,27 +208,22 @@ EOF
 
     # Backup existing file if present
     if [[ -f "$file" ]]; then
-        cp "$file" "${file}${BACKUP_SUFFIX}"
-        info "Backed up existing settings to: ${file}${BACKUP_SUFFIX}"
+        SETTINGS_BACKUP_PATH="${file}${BACKUP_SUFFIX}"
+        cp "$file" "$SETTINGS_BACKUP_PATH"
+        info "Backed up existing settings to: ${SETTINGS_BACKUP_PATH}"
     fi
 
-    cat > "$file" <<EOF
-{
-  "env": {
-    "CLAUDE_CODE_USE_BEDROCK": "1",
-    "AWS_REGION": "${DEFAULT_AWS_REGION}",
-    "ANTHROPIC_MODEL": "${DEFAULT_BEDROCK_MODEL_ID}",
-    "ANTHROPIC_SMALL_FAST_MODEL": "${DEFAULT_BEDROCK_SMALL_MODEL_ID}",
-    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "${DEFAULT_MAX_OUTPUT_TOKENS}",
-    "MAX_THINKING_TOKENS": "${DEFAULT_MAX_THINKING_TOKENS}"
-  }
-}
-EOF
+    echo "$settings_content" > "$file"
 }
 
 write_shell_snippet() {
     local file="$1"
-    
+    local profile_line=""
+
+    if [[ -n "$DEFAULT_AWS_PROFILE" ]]; then
+        profile_line="export AWS_PROFILE=\"${DEFAULT_AWS_PROFILE}\""
+    fi
+
     if [[ "$DRY_RUN" == "1" ]]; then
         info "[DRY RUN] Would write shell snippet to: $file"
         return
@@ -196,6 +236,14 @@ write_shell_snippet() {
 # Generated by ${SCRIPT_NAME} v${SCRIPT_VERSION} on $(date)
 export CLAUDE_CODE_USE_BEDROCK=1
 export AWS_REGION="${DEFAULT_AWS_REGION}"
+EOF
+
+    # Add AWS_PROFILE if configured
+    if [[ -n "$profile_line" ]]; then
+        echo "$profile_line" >> "$file"
+    fi
+
+    cat >> "$file" <<EOF
 export ANTHROPIC_MODEL="${DEFAULT_BEDROCK_MODEL_ID}"
 export ANTHROPIC_SMALL_FAST_MODEL="${DEFAULT_BEDROCK_SMALL_MODEL_ID}"
 export CLAUDE_CODE_MAX_OUTPUT_TOKENS="${DEFAULT_MAX_OUTPUT_TOKENS}"
@@ -331,20 +379,29 @@ check_aws_auth() {
     fi
 
     info "Checking AWS credentials..."
-    
+
+    # Use profile if configured
+    local aws_cmd="aws"
+    if [[ -n "$DEFAULT_AWS_PROFILE" ]]; then
+        aws_cmd="aws --profile ${DEFAULT_AWS_PROFILE}"
+    fi
+
     set +e
     local identity
-    identity=$(aws sts get-caller-identity 2>&1)
+    identity=$($aws_cmd sts get-caller-identity 2>&1)
     local aws_ok=$?
     set -e
 
     if [[ $aws_ok -ne 0 ]]; then
         warn "AWS auth check failed. This is OK if you haven't logged in yet."
         echo ""
-        echo "  To authenticate, try one of:"
-        echo "    ${BOLD}aws sso login --profile <your-profile>${RESET}"
-        echo "    ${BOLD}export AWS_PROFILE=<your-profile>${RESET}"
-        echo "    ${BOLD}aws configure${RESET}"
+        if [[ -n "$DEFAULT_AWS_PROFILE" ]]; then
+            echo "  To authenticate with your configured profile:"
+            echo "    ${BOLD}aws sso login --profile ${DEFAULT_AWS_PROFILE}${RESET}"
+        else
+            echo "  To authenticate:"
+            echo "    ${BOLD}aws login${RESET}"
+        fi
         echo ""
     else
         info "AWS auth successful!"
@@ -391,6 +448,10 @@ parse_args() {
                 ;;
             -r|--region)
                 DEFAULT_AWS_REGION="$2"
+                shift 2
+                ;;
+            -p|--profile)
+                DEFAULT_AWS_PROFILE="$2"
                 shift 2
                 ;;
             -m|--model)
@@ -454,6 +515,13 @@ main() {
     echo ""
     echo "Configuration:"
     echo "  ${BOLD}AWS Region:${RESET}    ${DEFAULT_AWS_REGION}"
+    if [[ -n "$DEFAULT_AWS_PROFILE" ]]; then
+        echo "  ${BOLD}AWS Profile:${RESET}   ${DEFAULT_AWS_PROFILE}"
+        echo "  ${BOLD}Auto Refresh:${RESET}  ${GREEN}Enabled${RESET} (aws sso login --profile ${DEFAULT_AWS_PROFILE})"
+    else
+        echo "  ${BOLD}AWS Profile:${RESET}   ${YELLOW}Not set${RESET} (using default credentials)"
+        echo "  ${BOLD}Auto Refresh:${RESET}  ${GREEN}Enabled${RESET} (aws login)"
+    fi
     echo "  ${BOLD}Primary Model:${RESET} ${DEFAULT_BEDROCK_MODEL_ID}"
     echo "  ${BOLD}Small Model:${RESET}   ${DEFAULT_BEDROCK_SMALL_MODEL_ID}"
     echo "  ${BOLD}Max Tokens:${RESET}    ${DEFAULT_MAX_OUTPUT_TOKENS}"
@@ -488,19 +556,55 @@ main() {
     echo "Files created:"
     echo "  • ${SETTINGS_FILE}"
     echo "  • ${SHELL_SNIPPET}"
+    if [[ -n "$SETTINGS_BACKUP_PATH" ]]; then
+        echo ""
+        echo "Previous settings backed up to:"
+        echo "  • ${SETTINGS_BACKUP_PATH}"
+    fi
     echo ""
+
+    # Show auto-refresh status
+    if [[ -n "$DEFAULT_AWS_PROFILE" ]]; then
+        echo "${GREEN}✓ Auto credential refresh enabled${RESET}"
+        echo "  When your AWS session expires, Claude Code will automatically"
+        echo "  run: aws sso login --profile ${DEFAULT_AWS_PROFILE}"
+        echo ""
+    else
+        echo "${GREEN}✓ Auto credential refresh enabled${RESET}"
+        echo "  When your AWS session expires, Claude Code will automatically"
+        echo "  run: aws login"
+        echo ""
+        echo "${YELLOW}TIP:${RESET} If you work with multiple AWS accounts, use --profile to"
+        echo "     specify which profile to use for credential refresh."
+        echo ""
+    fi
+
     echo "${BOLD}Next steps:${RESET}"
     echo ""
-    echo "  1. Activate in your current shell:"
-    echo "     ${BOLD}source \"${SHELL_SNIPPET}\"${RESET}"
+    if [[ -n "$DEFAULT_AWS_PROFILE" ]]; then
+        echo "  1. Login to AWS (if not already):"
+        echo "     ${BOLD}aws sso login --profile ${DEFAULT_AWS_PROFILE}${RESET}"
+        echo ""
+        echo "  2. Activate in your current shell:"
+        echo "     ${BOLD}source \"${SHELL_SNIPPET}\"${RESET}"
+        echo ""
+        echo "  3. Or reload your shell:"
+        echo "     ${BOLD}exec \$SHELL${RESET}"
+        echo ""
+        echo "  4. Start Claude Code:"
+        echo "     ${BOLD}claude${RESET}"
+    else
+        echo "  1. Activate in your current shell:"
+        echo "     ${BOLD}source \"${SHELL_SNIPPET}\"${RESET}"
+        echo ""
+        echo "  2. Or reload your shell:"
+        echo "     ${BOLD}exec \$SHELL${RESET}"
+        echo ""
+        echo "  3. Start Claude Code:"
+        echo "     ${BOLD}claude${RESET}"
+    fi
     echo ""
-    echo "  2. Or reload your shell:"
-    echo "     ${BOLD}exec \$SHELL${RESET}"
-    echo ""
-    echo "  3. Start Claude Code:"
-    echo "     ${BOLD}claude${RESET}"
-    echo ""
-    
+
     if [[ "$AUTO_SOURCE_RC" != "1" ]]; then
         echo "${YELLOW}TIP:${RESET} To auto-load in new terminals, run:"
         echo "     ${BOLD}$0 --auto-source${RESET}"
