@@ -153,10 +153,10 @@ Options:
 
 ## What Gets Created
 
-| File | Purpose |
-|------|---------|
-| `~/.claude/settings.json` | Claude Code configuration (env vars + `awsAuthRefresh` for auto credential refresh) |
-| `~/.claude/claude-code-bedrock.env` | Shell snippet for manual sourcing |
+| File                                | Purpose                                                                            |
+|-------------------------------------|------------------------------------------------------------------------------------|
+| `~/.claude/settings.json`           | Claude Code configuration (env vars + `awsAuthRefresh` for auto credential refresh) |
+| `~/.claude/claude-code-bedrock.env` | Shell snippet for manual sourcing                                                  |
 
 ### Example settings.json
 
