@@ -38,7 +38,7 @@ This script configures **automatic credential refresh**. When your AWS session e
 ```bash
 export AWS_REGION=us-east-1
 export AWS_PROFILE=liatrio-llm
-aws login
+aws sso login
 
 # Verify your credentials
 aws sts get-caller-identity
@@ -210,19 +210,20 @@ aws sso login --profile liatrio-llm
 1. Ensure you are using the new config file format and have `region = us-east-1` in the profile
 
 ```bash
-[profile liatrio-llm]
-sso_session = liatrio-sso
-sso_account_id = 381492021279
-sso_role_name = AWSPowerUserAccess
-region = us-east-1
 [sso-session liatrio-sso]
 sso_start_url = https://d-906787324a.awsapps.com/start/#/?tab=accounts
 sso_region = us-east-1
 sso_registration_scopes = sso:account:access
 
+[profile liatrio-llm]
+sso_session = liatrio-sso
+sso_account_id = 381492021279
+sso_role_name = AWSPowerUserAccess
+region = us-east-1
+
 ```
 
-2. Login to aws sso again
+2. Login to aws sso again `aws sso login`
 
 ### Throughput Errors
 
