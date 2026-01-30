@@ -4,8 +4,8 @@ A simple setup script to configure [Claude Code](https://code.claude.com/docs/en
 
 ## Prerequisites
 
-1. **AWS SSO** Configured per [Workstation Setup Guide](https://github.com/liatrio/flywheel-infrastructure/edit/main/docs/onboarding/workstation.md)
-2. Access to liatrio-llm ( Use step one of the [Workstation Setup Guide](https://github.com/liatrio/flywheel-infrastructure/edit/main/docs/onboarding/workstation.md) to see if you have access). If you do not have access, ask for it in `#liatrio-tools-support`
+1. **AWS SSO** Configured per [Workstation Setup Guide](https://github.com/liatrio/flywheel-infrastructure/blob/main/docs/onboarding/workstation.md)
+2. Access to liatrio-llm ( Use step one of the [Workstation Setup Guide](https://github.com/liatrio/flywheel-infrastructure/blob/main/docs/onboarding/workstation.md) to see if you have access). If you do not have access, ask for it in `#liatrio-tools-support`
 5. **Claude Code** installed (`npm install -g @anthropic-ai/claude-code`)
 
 > **Note:** This guide assumes you are using the new AWS CLI config file format with an `sso-session` block and one or more `profile` blocks. This is the recommended format since aws cli v2.9.0 (released in 2022) and documented in [Configuring IAM Identity Center authentication with the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html).
