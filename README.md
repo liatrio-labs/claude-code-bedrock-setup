@@ -37,7 +37,7 @@ This script configures **automatic credential refresh**. When your AWS session e
 
 ```bash
 export AWS_REGION=us-east-1
-export AWS_PROFILE-liatrio-llm
+export AWS_PROFILE=liatrio-llm
 aws login
 
 # Verify your credentials
@@ -54,7 +54,8 @@ git clone <this-repo>
 cd claude-code-bedrock-setup
 
 # 2. Login to AWS
-aws login
+export AWS_PROFILE=liatrio-llm
+aws sso login
 
 # 3. Run setup
 ./setup-claude-code-bedrock.sh --auto-source
@@ -73,26 +74,6 @@ claude
 # You should see "API provider: AWS Bedrock"
 ```
 
-Or with a named profile:
-
-```bash
-# 1. Clone or download the script
-git clone <this-repo>
-cd claude-code-bedrock-setup
-
-# 2. Login to AWS with your profile
-aws sso login --profile your-profile-name
-
-# 3. Run setup with your profile
-./setup-claude-code-bedrock.sh --profile your-profile-name --auto-source
-
-# 4. Activate in current shell (or restart your terminal)
-source ~/.claude/claude-code-bedrock.env
-
-# 5. Start Claude Code
-claude
-```
-
 ## Installation Options
 
 ### Basic Setup (Interactive Activation)
@@ -107,24 +88,16 @@ This configures automatic credential refresh using the `aws login` command.
 ### Auto-load in New Terminals
 
 ```bash
-./setup-claude-code-bedrock.sh --auto-source
-```
-
-This configures automatic credential refresh using the `aws login` command and appends a source line to your shell rc file (`~/.zshrc` or `~/.bashrc`).
-
-### With Named Profile
-
-```bash
-./setup-claude-code-bedrock.sh --profile your-profile-name --auto-source
+./setup-claude-code-bedrock.sh --profile liatrio-llm --auto-source
 source ~/.claude/claude-code-bedrock.env
 ```
 
-This configures automatic credential refresh using the `aws sso login --profile your-profile-name` command and appends a source line to your shell rc file (`~/.zshrc` or `~/.bashrc`). This also sets `AWS_PROFILE` in your environment so credentials refresh using your specific profile.
+This configures automatic credential refresh using the `aws sso login --profile liatrio-llm` command and appends a source line to your shell rc file (`~/.zshrc` or `~/.bashrc`). This also sets `AWS_PROFILE` in your environment so credentials refresh. 
 
 ### Custom Region
 
 ```bash
-./setup-claude-code-bedrock.sh --profile your-profile --region us-west-2
+./setup-claude-code-bedrock.sh --profile liatrio-llm --region us-west-2
 ```
 
 ### Custom Model (Inference Profile)
@@ -132,7 +105,7 @@ This configures automatic credential refresh using the `aws sso login --profile 
 For production use or to avoid throughput limits, use an [Inference Profile ARN](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles.html):
 
 ```bash
-./setup-claude-code-bedrock.sh --profile your-profile \
+./setup-claude-code-bedrock.sh --profile liatrio-llm \
   --model "arn:aws:bedrock:us-east-1:123456789012:inference-profile/us.anthropic.claude-opus-4-5-20251101-v1:0"
 ```
 
@@ -142,7 +115,7 @@ All options can be set via environment variables:
 
 ```bash
 AWS_REGION=eu-west-1 \
-AWS_PROFILE=your-profile \
+AWS_PROFILE=liatrio-llm \
 BEDROCK_MODEL_ID="us.anthropic.claude-sonnet-4-5-20250929-v1:0" \
 BEDROCK_SMALL_MODEL_ID="us.anthropic.claude-haiku-4-5-20251001-v1:0" \
 ./setup-claude-code-bedrock.sh
@@ -175,11 +148,11 @@ Options:
 
 ```json
 {
-  "awsAuthRefresh": "aws sso login --profile your-profile",
+  "awsAuthRefresh": "aws sso login --profile liatrio-llm",
   "env": {
     "CLAUDE_CODE_USE_BEDROCK": "1",
     "AWS_REGION": "us-east-1",
-    "AWS_PROFILE": "your-profile",
+    "AWS_PROFILE": "liatrio-llm",
     "ANTHROPIC_MODEL": "us.anthropic.claude-opus-4-5-20251101-v1:0",
     "ANTHROPIC_SMALL_FAST_MODEL": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "64000",
@@ -225,7 +198,7 @@ aws sts get-caller-identity
 To re-authenticate:
 
 ```bash
-aws sso login --profile your-profile
+aws sso login --profile liatrio-llm
 ```
 
 ### "Access denied" for Bedrock
@@ -256,7 +229,7 @@ sso_registration_scopes = sso:account:access
 Switch from a foundation model ID to an Inference Profile ARN:
 
 ```bash
-./setup-claude-code-bedrock.sh --profile your-profile \
+./setup-claude-code-bedrock.sh --profile liatrio-llm \
   --model "arn:aws:bedrock:REGION:ACCOUNT:inference-profile/MODEL"
 ```
 
