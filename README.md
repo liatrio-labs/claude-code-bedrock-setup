@@ -4,31 +4,44 @@ A simple setup script to configure [Claude Code](https://code.claude.com/docs/en
 
 ## Prerequisites
 
-1. **AWS CLI** installed ([install guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html))
-2. **AWS Account** with Bedrock access enabled
-3. **Model Access** - Enable Claude models in the [Bedrock console](https://console.aws.amazon.com/bedrock/home#/modelaccess)
-4. **Claude Code** installed (`npm install -g @anthropic-ai/claude-code`)
+1. **AWS SSO** Configured per [Workstation Setup Guide](https://github.com/liatrio/flywheel-infrastructure/edit/main/docs/onboarding/workstation.md)
+2. Access to liatrio-llm ( Use step one of the [Workstation Setup Guide](https://github.com/liatrio/flywheel-infrastructure/edit/main/docs/onboarding/workstation.md) to see if you have access). If you do not have access, ask for it in `#liatrio-tools-support`
+5. **Claude Code** installed (`npm install -g @anthropic-ai/claude-code`)
+
+> **Note:** This guide assumes you are using the new AWS CLI config file format with an `sso-session` block and one or more `profile` blocks. This is the recommended format since aws cli v2.9.0 (released in 2022) and documented in [Configuring IAM Identity Center authentication with the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sso.html).
+
+## AWS CLI Profile setup
+
+Add the following to ~/.aws/config
+
+```bash
+[profile liatro-llm]
+sso_session = <your sso session name> (look for [sso-session xxxxxxx])
+sso_account_id = 381492021279
+sso_role_name = AWSPowerUserAccess
+region = us-east-1
+```
+
+If you do not have an sso-session block, add this one 
+
+```bash
+[sso-session liatro-sso]
+sso_start_url = https://d-906787324a.awsapps.com/start/#/?tab=accounts
+sso_region = us-east-1
+sso_registration_scopes = sso:account:access
+```
 
 ## AWS Authentication
 
 This script configures **automatic credential refresh**. When your AWS session expires, Claude Code will automatically re-authenticate to preserve your conversation context.
 
 ```bash
-# Login to AWS
+export AWS_REGION=us-east-1
+export AWS_PROFILE-liatrio-llm
 aws login
 
 # Verify your credentials
 aws sts get-caller-identity
-```
-
-Or if you prefer using SSO with a named profile:
-
-```bash
-# Login with a named profile
-aws sso login --profile your-profile-name
-
-# Verify your credentials
-aws sts get-caller-identity --profile your-profile-name
 ```
 
 > **Note:** If you haven't configured AWS SSO yet, see the [AWS SSO configuration guide](https://docs.aws.amazon.com/cli/latest/userguide/sso-configure-profile-token.html). Using a named profile is helpful when working with multiple AWS accounts.
@@ -219,6 +232,24 @@ aws sso login --profile your-profile
 
 1. Check model access is enabled in [Bedrock console](https://console.aws.amazon.com/bedrock/home#/modelaccess)
 2. Verify IAM permissions include `bedrock:InvokeModel`
+
+### "API Error: Could not load credentials from any provider"
+1. Ensure you are using the new config file format and have `region = us-east-1` in the profile
+
+```bash
+[profile liatro-llm]
+sso_session = liatro-sso
+sso_account_id = 381492021279
+sso_role_name = AWSPowerUserAccess
+region = us-east-1
+[sso-session liatrio-sso]
+sso_start_url = https://d-906787324a.awsapps.com/start/#/?tab=accounts
+sso_region = us-east-1
+sso_registration_scopes = sso:account:access
+
+```
+
+2. Login to aws sso again
 
 ### Throughput Errors
 
