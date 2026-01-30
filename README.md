@@ -15,7 +15,7 @@ A simple setup script to configure [Claude Code](https://code.claude.com/docs/en
 Add the following to ~/.aws/config
 
 ```bash
-[profile liatro-llm]
+[profile liatrio-llm]
 sso_session = <your sso session name> (look for [sso-session xxxxxxx])
 sso_account_id = 381492021279
 sso_role_name = AWSPowerUserAccess
@@ -25,7 +25,7 @@ region = us-east-1
 If you do not have an sso-session block, add this one 
 
 ```bash
-[sso-session liatro-sso]
+[sso-session liatrio-sso]
 sso_start_url = https://d-906787324a.awsapps.com/start/#/?tab=accounts
 sso_region = us-east-1
 sso_registration_scopes = sso:account:access
@@ -237,8 +237,8 @@ aws sso login --profile your-profile
 1. Ensure you are using the new config file format and have `region = us-east-1` in the profile
 
 ```bash
-[profile liatro-llm]
-sso_session = liatro-sso
+[profile liatrio-llm]
+sso_session = liatrio-sso
 sso_account_id = 381492021279
 sso_role_name = AWSPowerUserAccess
 region = us-east-1
